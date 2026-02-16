@@ -1,26 +1,50 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-navy-950: #0F172A;
+  --color-navy-900: #1E293B;
+  --color-navy-800: #334155;
+  --color-navy-700: #475569;
+  --color-navy-600: #64748B;
+  --color-navy-500: #94A3B8;
+  --color-navy-400: #CBD5E1;
+  --color-navy-300: #E2E8F0;
+  --color-amber-500: #F59E0B;
+  --color-amber-400: #FBBF24;
+  --color-amber-600: #D97706;
+  --color-emerald-500: #10B981;
+  --color-emerald-400: #34D399;
+  --color-rose-500: #F43F5E;
+  --color-rose-400: #FB7185;
+  --color-cyan-400: #22D3EE;
+  --color-cyan-500: #06B6D4;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--color-navy-950);
+  color: #E2E8F0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* PWA safe areas */
+html {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Prevent overscroll bounce */
+html, body {
+  overscroll-behavior: none;
+}
+
+/* Touch targets */
+button, a, input, select, textarea {
+  min-height: 44px;
+}
+
+input, select, textarea {
+  font-size: 16px; /* Prevent iOS zoom on focus */
 }
