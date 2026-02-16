@@ -100,7 +100,8 @@ export default function PropertiesPage() {
   return (
     <div className="space-y-4">
       {/* Paste Link Bar */}
-      <div className="rounded-lg border border-navy-700 bg-navy-900/80 p-3 space-y-2">
+      <div className="rounded-lg border border-amber-500/30 bg-navy-900 p-3 space-y-2">
+        <p className="text-xs font-medium text-amber-500 mb-1">Quick Add from Link</p>
         <div className="flex items-center gap-2">
           <Link size={16} className="text-amber-500 shrink-0" />
           <input
