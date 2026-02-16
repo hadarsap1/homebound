@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       jsonLd.floor ?? extractFloor(corpus);
 
     const parking =
-      jsonLd.parking ?? extractBoolean(corpus, /חניה|חנייה|חנית|parking|מקום\s*חניה/i);
+      jsonLd.parking ?? extractBoolean(corpus, /חניה|חנייה|חנית|חניות|parking|מקום\s*חניה/i);
 
     const elevator =
       jsonLd.elevator ?? extractBoolean(corpus, /מעלית|elevator|lift/i);
@@ -360,12 +360,26 @@ function extractAddress(
 ): string | null {
   const sources = [title, description].filter(Boolean) as string[];
 
-  // Yad2 title format: "דירה 4 חדרים | רחוב הרצל 15, תל אביב"
+  // Yad2 title format: "Type, Street 5, Neighborhood, City | tagline"
+  // Madlan title format: similar
   if (isYad2 || isMadlan) {
     for (const s of sources) {
-      // After pipe or dash separator
-      const afterSep = s.match(/[|–-]\s*([\u0590-\u05FF][^|–\n]+)/);
-      if (afterSep) return afterSep[1].trim();
+      // Take text before pipe (the tagline is after pipe)
+      const beforePipe = s.split("|")[0].trim();
+      const parts = beforePipe.split(",").map((p) => p.trim());
+      // If we have "Type, Street X, Area, City" — skip first part (type) and join the rest
+      if (parts.length >= 3) {
+        // Check if second part looks like a street (contains a number)
+        if (/\d/.test(parts[1])) {
+          return parts.slice(1).join(", ");
+        }
+        // Otherwise return all parts joined
+        return parts.join(", ");
+      }
+      // If just 2 parts: "Street X, City"
+      if (parts.length === 2 && /\d/.test(parts[0])) {
+        return beforePipe;
+      }
     }
   }
 
@@ -383,7 +397,7 @@ function extractAddress(
     if (street) return street[0].trim();
   }
 
-  // Try from page text — look for city names near street patterns
+  // Try from page text — look for labeled address
   const textAddr = text.match(
     /(?:כתובת|address)[:\s]*([\u0590-\u05FFa-zA-Z0-9\s,'.]+?)(?:\s{2,}|$)/i
   );
