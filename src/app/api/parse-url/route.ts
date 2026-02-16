@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const res = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; HomeBound/1.0; +https://homebound.app)",
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
       },
       signal: AbortSignal.timeout(10000),
     });
@@ -20,7 +20,11 @@ export async function POST(request: NextRequest) {
         address: "",
         price: null,
         bedrooms: null,
+        baths: null,
         sqm: null,
+        floor: null,
+        parking: false,
+        elevator: false,
         images: [],
         source_url: url,
       });
@@ -38,7 +42,11 @@ export async function POST(request: NextRequest) {
     const address = extractAddress(title, ogTitle, ogDescription) || "";
     const price = extractPrice(html, ogDescription);
     const bedrooms = extractRooms(html, ogDescription);
+    const baths = extractBaths(html, ogDescription);
     const sqm = extractSqm(html, ogDescription);
+    const floor = extractFloor(html, ogDescription);
+    const parking = extractBoolean(html, ogDescription, /חניה|חנייה|parking/i);
+    const elevator = extractBoolean(html, ogDescription, /מעלית|elevator/i);
 
     const images: string[] = [];
     if (ogImage) images.push(ogImage);
@@ -56,7 +64,11 @@ export async function POST(request: NextRequest) {
       address,
       price,
       bedrooms,
+      baths,
       sqm,
+      floor,
+      parking,
+      elevator,
       images: images.slice(0, 5),
       source_url: url,
       raw_title: title,
@@ -92,16 +104,14 @@ function extractAddress(
   ogTitle: string | null,
   description: string | null
 ): string | null {
-  // Common Israeli listing patterns: "Street Name 12, City"
   const sources = [title, ogTitle, description].filter(Boolean) as string[];
   for (const source of sources) {
-    // Match Hebrew/English street addresses
+    // Match Hebrew/English street addresses: "Street Name 12, City"
     const match = source.match(
       /[\u0590-\u05FFa-zA-Z\s]{2,}\s*\d{1,4}(?:\s*,\s*[\u0590-\u05FFa-zA-Z\s]+)?/
     );
     if (match) return match[0].trim();
   }
-  // Fallback: use the title as address
   return ogTitle || title || null;
 }
 
@@ -135,6 +145,20 @@ function extractRooms(
   return null;
 }
 
+function extractBaths(
+  html: string,
+  description: string | null
+): number | null {
+  const sources = [description || "", html.slice(0, 50000)];
+  for (const source of sources) {
+    const match = source.match(
+      /(\d+(?:\.5)?)\s*(?:אמבטיות|אמבטי|מקלחות|bath(?:room)?s?)/i
+    );
+    if (match) return parseFloat(match[1]);
+  }
+  return null;
+}
+
 function extractSqm(html: string, description: string | null): number | null {
   const sources = [description || "", html.slice(0, 50000)];
   for (const source of sources) {
@@ -144,4 +168,35 @@ function extractSqm(html: string, description: string | null): number | null {
     if (match) return parseInt(match[1], 10);
   }
   return null;
+}
+
+function extractFloor(
+  html: string,
+  description: string | null
+): number | null {
+  const sources = [description || "", html.slice(0, 50000)];
+  for (const source of sources) {
+    // "קומה 3" or "floor 3" or "3rd floor"
+    const match = source.match(
+      /(?:קומה|floor)\s*(\d+)/i
+    );
+    if (match) return parseInt(match[1], 10);
+    const matchReverse = source.match(
+      /(\d+)(?:st|nd|rd|th)\s*floor/i
+    );
+    if (matchReverse) return parseInt(matchReverse[1], 10);
+  }
+  return null;
+}
+
+function extractBoolean(
+  html: string,
+  description: string | null,
+  pattern: RegExp
+): boolean {
+  const sources = [description || "", html.slice(0, 50000)];
+  for (const source of sources) {
+    if (pattern.test(source)) return true;
+  }
+  return false;
 }

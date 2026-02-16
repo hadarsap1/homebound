@@ -14,7 +14,11 @@ interface ParsedData {
   address: string;
   price: number | null;
   bedrooms: number | null;
+  baths: number | null;
   sqm: number | null;
+  floor: number | null;
+  parking: boolean;
+  elevator: boolean;
   images: string[];
   source_url: string;
   raw_title?: string;
@@ -65,7 +69,7 @@ export default function SharePage() {
         setSqm(data.sqm?.toString() || "");
       })
       .catch(() => {
-        setParsed({ address: "", price: null, bedrooms: null, sqm: null, images: [], source_url: extractedUrl });
+        setParsed({ address: "", price: null, bedrooms: null, baths: null, sqm: null, floor: null, parking: false, elevator: false, images: [], source_url: extractedUrl });
       })
       .finally(() => setLoading(false));
   }, [url]);
@@ -77,7 +81,11 @@ export default function SharePage() {
       address: address.trim(),
       price: price ? parseFloat(price) : null,
       beds: beds ? parseFloat(beds) : null,
+      baths: parsed?.baths ?? null,
       sqm: sqm ? parseFloat(sqm) : null,
+      floor: parsed?.floor ?? null,
+      parking: parsed?.parking ?? false,
+      elevator: parsed?.elevator ?? false,
       source_url: parsed?.source_url || url,
       status: "new",
     });
