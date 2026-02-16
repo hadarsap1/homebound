@@ -97,6 +97,8 @@ export async function POST(request: NextRequest) {
     const elevator =
       jsonLd.elevator ?? extractBoolean(corpus, /מעלית|elevator|lift/i);
 
+    const contact_phone = extractPhones(corpus);
+
     // Collect images
     const images: string[] = [];
     if (og.image) images.push(og.image);
@@ -124,6 +126,7 @@ export async function POST(request: NextRequest) {
       floor,
       parking,
       elevator,
+      contact_phone,
       images: images.slice(0, 8),
       source_url: url,
       raw_title: og.title || "",
@@ -535,4 +538,46 @@ function extractFloor(corpus: string): number | null {
 
 function extractBoolean(corpus: string, pattern: RegExp): boolean {
   return pattern.test(corpus);
+}
+
+function extractPhones(corpus: string): string | null {
+  // Israeli phone number patterns
+  const patterns: RegExp[] = [
+    // 05X-XXXXXXX or 05X XXXXXXX or 05XXXXXXXXX (mobile)
+    /(?:^|[\s,;:(])?(05\d[- ]?\d{3}[- ]?\d{4})(?:[\s,;:)]|$)/g,
+    // 0X-XXXXXXX (landline) e.g. 02-1234567, 09-1234567
+    /(?:^|[\s,;:(])?(0[2-9][- ]?\d{7})(?:[\s,;:)]|$)/g,
+    // +972-5X-XXXXXXX or +972-X-XXXXXXX
+    /(\+972[- ]?(?:5\d|[2-9])[- ]?\d{3}[- ]?\d{4})(?:[\s,;:)]|$)/g,
+    // 972-5X-XXXXXXX (without +)
+    /(972[- ]?(?:5\d|[2-9])[- ]?\d{3}[- ]?\d{4})(?:[\s,;:)]|$)/g,
+  ];
+
+  const phones = new Set<string>();
+
+  for (const pat of patterns) {
+    let match;
+    while ((match = pat.exec(corpus)) !== null) {
+      let phone = match[1].replace(/[- ]/g, "");
+      // Normalize +972 prefix to 0
+      if (phone.startsWith("+972")) {
+        phone = "0" + phone.slice(4);
+      } else if (phone.startsWith("972") && phone.length >= 11) {
+        phone = "0" + phone.slice(3);
+      }
+      // Validate length: Israeli numbers are 10 digits (0X + 7-8 digits)
+      if (phone.length === 10 && /^0[2-9]/.test(phone)) {
+        // Format nicely: 05X-XXX-XXXX or 0X-XXXXXXX
+        if (phone.startsWith("05")) {
+          phone = phone.slice(0, 3) + "-" + phone.slice(3, 6) + "-" + phone.slice(6);
+        } else {
+          phone = phone.slice(0, 2) + "-" + phone.slice(2);
+        }
+        phones.add(phone);
+      }
+    }
+  }
+
+  if (phones.size === 0) return null;
+  return Array.from(phones).slice(0, 3).join(", ");
 }

@@ -29,6 +29,7 @@ interface ParsedResult {
   floor: number | null;
   parking: boolean;
   elevator: boolean;
+  contact_phone: string | null;
   images: string[];
   source_url: string;
   raw_title?: string;
@@ -86,6 +87,7 @@ export default function PropertiesPage() {
         floor: data.floor,
         parking: data.parking ?? false,
         elevator: data.elevator ?? false,
+        contact_phone: data.contact_phone || null,
         source_url: data.source_url || url,
       });
       setShowAdd(true);

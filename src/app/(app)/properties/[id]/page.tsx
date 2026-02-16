@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/loading-skeleton";
 import { DynamicFieldInput } from "@/components/forms/dynamic-field-input";
 import {
   ArrowLeft, Edit, Trash2, Bed, Bath, Maximize, Car, Building,
-  ExternalLink, MapPin, Calendar,
+  ExternalLink, MapPin, Calendar, Phone,
 } from "lucide-react";
 import type { Json, CustomFieldDefinition } from "@/lib/supabase/types";
 
@@ -152,6 +152,24 @@ export default function PropertyDetailPage() {
         <Card>
           <h3 className="text-sm font-medium text-navy-400 mb-1">Notes</h3>
           <p className="text-sm text-navy-300 whitespace-pre-wrap">{property.notes}</p>
+        </Card>
+      )}
+
+      {/* Contact Phone */}
+      {property.contact_phone && (
+        <Card>
+          <h3 className="text-sm font-medium text-navy-400 mb-1">Contact</h3>
+          <div className="flex flex-wrap gap-2">
+            {property.contact_phone.split(",").map((phone) => (
+              <a
+                key={phone.trim()}
+                href={`tel:${phone.trim().replace(/[- ]/g, "")}`}
+                className="flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300"
+              >
+                <Phone size={14} /> {phone.trim()}
+              </a>
+            ))}
+          </div>
         </Card>
       )}
 

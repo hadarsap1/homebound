@@ -47,6 +47,7 @@ export function PropertyForm({ initialData, onSubmit, loading }: PropertyFormPro
     vibe_tags: (initialData?.vibe_tags || []) as string[],
     metadata: (initialData?.metadata || {}) as Record<string, Json>,
     source_url: initialData?.source_url || null,
+    contact_phone: initialData?.contact_phone || null,
     notes: initialData?.notes || null,
   });
 
@@ -225,6 +226,14 @@ export function PropertyForm({ initialData, onSubmit, loading }: PropertyFormPro
           <Plus size={14} /> Add Custom Field
         </button>
       )}
+
+      <Input
+        label="Contact Phone"
+        type="tel"
+        value={form.contact_phone ?? ""}
+        onChange={(e) => setForm((p) => ({ ...p, contact_phone: e.target.value || null }))}
+        placeholder="05X-XXX-XXXX"
+      />
 
       <div>
         <label className="block text-sm font-medium text-navy-400 mb-1">Notes</label>
