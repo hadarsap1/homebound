@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Extract all fields with priority: JSON-LD > OG tags > regex on HTML
     const address =
       jsonLd.address ||
-      extractAddress(og.title, og.description, textContent, isYad2, isMadlan) ||
+      extractAddress(og.title, og.description, textContent, isYad2, isMadlan, isFacebook) ||
       og.title ||
       "";
 
@@ -149,9 +149,9 @@ async function fetchPage(url: string, isFacebook: boolean): Promise<string> {
   };
 
   if (isFacebook) {
-    // Use a desktop user-agent for Facebook — sometimes returns more OG data
+    // Use mobile UA for Facebook — desktop UA returns empty error pages
     headers["User-Agent"] =
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
   } else {
     headers["User-Agent"] =
       "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
@@ -196,7 +196,20 @@ function extractMeta(html: string, property: string): string | null {
     `<meta[^>]*content=["']([^"']+)["'][^>]*(?:property|name)=["']${property}["']`,
     "i"
   );
-  return r1.exec(html)?.[1] || r2.exec(html)?.[1] || null;
+  const raw = r1.exec(html)?.[1] || r2.exec(html)?.[1] || null;
+  return raw ? decodeEntities(raw) : null;
+}
+
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ");
 }
 
 // --- JSON-LD ---
@@ -338,14 +351,8 @@ function stripHtml(html: string): string {
   text = text.replace(/<style[\s\S]*?<\/style>/gi, " ");
   // Remove tags
   text = text.replace(/<[^>]+>/g, " ");
-  // Decode common entities
-  text = text
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ");
+  // Decode HTML entities (including numeric &#xHEX; and &#DEC;)
+  text = decodeEntities(text);
   // Collapse whitespace
   text = text.replace(/\s+/g, " ");
   // Limit to reasonable size
@@ -359,9 +366,46 @@ function extractAddress(
   description: string | null,
   text: string,
   isYad2: boolean,
-  isMadlan: boolean
+  isMadlan: boolean,
+  isFacebook: boolean = false
 ): string | null {
   const sources = [title, description].filter(Boolean) as string[];
+
+  // Facebook group post: OG title = "group name | post snippet | Facebook"
+  // The actual listing info is in the OG description
+  if (isFacebook) {
+    // Try to extract city/location from description first
+    const desc = description || "";
+    // Look for "ב" + city name pattern (common in Hebrew: "בתל מונד", "ברמת גן")
+    const cityMatch = desc.match(
+      /\bב([\u0590-\u05FF]{2,}\s*[\u0590-\u05FF]*)\s*[,،.]?\s/
+    );
+    // Look for "Street Name 12, City" pattern in description
+    const streetCityMatch = desc.match(
+      /([\u0590-\u05FFa-zA-Z\s']{2,}\s+\d{1,4})\s*,\s*([\u0590-\u05FFa-zA-Z\s']+)/
+    );
+    if (streetCityMatch) return streetCityMatch[0].trim();
+    if (cityMatch) return cityMatch[1].trim();
+
+    // Fallback: use the middle segment of the OG title (between pipes)
+    if (title) {
+      const parts = title.split("|").map((p) => p.trim());
+      // Remove "Facebook" suffix and group name prefix
+      const filtered = parts.filter(
+        (p) => !/^facebook$/i.test(p) && p.length > 0
+      );
+      // If there's a middle segment, it might be the post title with location info
+      if (filtered.length >= 2) {
+        const postTitle = filtered[filtered.length - 1];
+        const postCityMatch = postTitle.match(
+          /\bב([\u0590-\u05FF]{2,}\s*[\u0590-\u05FF]*)/
+        );
+        if (postCityMatch) return postCityMatch[1].trim();
+      }
+    }
+    // Don't fall through to generic extraction with Facebook's noisy title
+    return null;
+  }
 
   // Yad2 title format: "Type, Street 5, Neighborhood, City | tagline"
   // Madlan title format: similar
