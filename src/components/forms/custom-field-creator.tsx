@@ -74,9 +74,10 @@ export function CustomFieldCreator({ entity = "property", onAdd, onCancel }: Cus
                 <button
                   type="button"
                   onClick={() => setOptions(options.filter((_, j) => j !== i))}
+                  aria-label={`Remove option ${i + 1}`}
                   className="text-navy-500 hover:text-rose-400"
                 >
-                  <X size={16} />
+                  <X size={16} aria-hidden="true" />
                 </button>
               )}
             </div>

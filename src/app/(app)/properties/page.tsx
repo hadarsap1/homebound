@@ -8,6 +8,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { PropertyForm } from "@/components/forms/property-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PropertyCardSkeleton } from "@/components/ui/loading-skeleton";
+import { FilterChips } from "@/components/ui/filter-chips";
 import type { PropertyStatus, PropertyInsert } from "@/lib/supabase/types";
 import { Plus, Search, Link, Loader2, X } from "lucide-react";
 
@@ -125,8 +126,8 @@ export default function PropertiesPage() {
             disabled={parsing}
           />
           {linkInput && !parsing && (
-            <button onClick={() => { setLinkInput(""); setParseError(""); }} className="text-navy-600">
-              <X size={14} />
+            <button onClick={() => { setLinkInput(""); setParseError(""); }} className="text-navy-600" aria-label="Clear link">
+              <X size={14} aria-hidden="true" />
             </button>
           )}
           {parsing ? (
@@ -158,21 +159,11 @@ export default function PropertiesPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f.value
-                ? "bg-amber-500/20 text-amber-400"
-                : "bg-navy-800 text-navy-500"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips
+        options={FILTERS}
+        value={filter}
+        onChange={(v) => setFilter(v as PropertyStatus | "all")}
+      />
 
       {isLoading ? (
         <div className="space-y-3">
@@ -203,9 +194,10 @@ export default function PropertiesPage() {
           setPrefilled(null);
           setShowAdd(true);
         }}
+        aria-label="Add property"
         className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-navy-950 shadow-lg shadow-amber-500/20 active:scale-95 transition-transform"
       >
-        <Plus size={24} />
+        <Plus size={24} aria-hidden="true" />
       </button>
 
       <BottomSheet

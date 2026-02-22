@@ -11,18 +11,20 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StarRating } from "@/components/ui/star-rating";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { PropertyForm } from "@/components/forms/property-form";
 import { RatingForm } from "@/components/forms/rating-form";
 import { RatingComparison } from "@/components/property/rating-comparison";
 import { VisitChecklistForm } from "@/components/forms/visit-checklist-form";
 import { VisitChecklistCard } from "@/components/property/visit-checklist-card";
 import { Skeleton } from "@/components/ui/loading-skeleton";
+import { Select } from "@/components/ui/select";
 import { DynamicFieldInput } from "@/components/forms/dynamic-field-input";
 import {
   ArrowLeft, Edit, Trash2, Bed, Bath, Maximize, Car, Building,
   ExternalLink, MapPin, Calendar, Phone,
 } from "lucide-react";
-import type { Json, CustomFieldDefinition } from "@/lib/supabase/types";
+import type { Json, CustomFieldDefinition, PropertyStatus } from "@/lib/supabase/types";
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +39,7 @@ export default function PropertyDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showRate, setShowRate] = useState(false);
   const [showAddVisit, setShowAddVisit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (isLoading) {
     return (
@@ -78,7 +81,21 @@ export default function PropertyDetailPage() {
             <p className="text-lg text-amber-500 font-semibold">{priceFormatted}</p>
           )}
         </div>
-        <Badge status={property.status} className="text-sm" />
+        <Select
+          value={property.status}
+          onChange={(e) =>
+            updateProperty.mutate({ id, status: e.target.value as PropertyStatus })
+          }
+          options={[
+            { value: "new", label: "New" },
+            { value: "visited", label: "Visited" },
+            { value: "interested", label: "Interested" },
+            { value: "offer_made", label: "Offer Made" },
+            { value: "rejected", label: "Rejected" },
+            { value: "archived", label: "Archived" },
+          ]}
+          className="w-auto min-w-[130px] py-2 text-xs"
+        />
       </div>
 
       {/* Details */}
@@ -226,14 +243,10 @@ export default function PropertyDetailPage() {
         </Button>
         <Button
           variant="danger"
-          onClick={async () => {
-            if (confirm("Delete this property?")) {
-              await deleteProperty.mutateAsync(id);
-              router.push("/properties");
-            }
-          }}
+          aria-label="Delete property"
+          onClick={() => setShowDeleteConfirm(true)}
         >
-          <Trash2 size={14} />
+          <Trash2 size={14} aria-hidden="true" />
         </Button>
       </div>
 
@@ -258,6 +271,19 @@ export default function PropertyDetailPage() {
       <BottomSheet open={showAddVisit} onClose={() => setShowAddVisit(false)} title="Schedule Visit">
         <VisitChecklistForm propertyId={id} onDone={() => setShowAddVisit(false)} />
       </BottomSheet>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Property"
+        message="Delete this property? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={async () => {
+          await deleteProperty.mutateAsync(id);
+          router.push("/properties");
+        }}
+      />
     </div>
   );
 }

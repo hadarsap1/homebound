@@ -21,10 +21,12 @@ export function StarRating({ value, onChange, size = 24, label, readOnly }: Star
             type="button"
             disabled={readOnly}
             onClick={() => onChange?.(star)}
-            className={`${readOnly ? "cursor-default" : "cursor-pointer"} transition-colors`}
+            aria-label={`Rate ${star} of 5`}
+            className={`p-1.5 ${readOnly ? "cursor-default" : "cursor-pointer"} transition-colors`}
           >
             <Star
               size={size}
+              aria-hidden="true"
               className={
                 star <= value
                   ? "fill-amber-400 text-amber-400"

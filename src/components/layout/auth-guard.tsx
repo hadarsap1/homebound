@@ -26,6 +26,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // Register service worker for PWA
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
     return () => subscription.unsubscribe();
   }, [supabase, router]);
 

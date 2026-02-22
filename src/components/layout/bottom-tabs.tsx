@@ -25,11 +25,12 @@ export function BottomTabs() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs transition-colors ${
+              className={`flex flex-col items-center gap-1 px-3 py-3 text-xs transition-colors ${
                 isActive ? "text-amber-500" : "text-navy-500"
               }`}
+              aria-current={isActive ? "page" : undefined}
             >
-              <Icon size={20} />
+              <Icon size={20} aria-hidden="true" />
               <span>{tab.label}</span>
             </Link>
           );

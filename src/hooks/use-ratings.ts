@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/supabase-provider";
+import { toast } from "sonner";
 import type { PropertyRating } from "@/lib/supabase/types";
 
 export function usePropertyRatings(propertyId: string) {
@@ -19,6 +20,22 @@ export function usePropertyRatings(propertyId: string) {
       return data as unknown as PropertyRating[];
     },
     enabled: !!propertyId,
+  });
+}
+
+export function useFamilyRatings() {
+  const supabase = useSupabase();
+
+  return useQuery({
+    queryKey: ["ratings", "all"],
+    queryFn: async (): Promise<PropertyRating[]> => {
+      const { data, error } = await supabase
+        .from("property_ratings")
+        .select("*");
+
+      if (error) throw error;
+      return data as unknown as PropertyRating[];
+    },
   });
 }
 
@@ -47,6 +64,10 @@ export function useUpsertRating() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ratings", data.property_id] });
+      toast.success("Rating saved");
+    },
+    onError: () => {
+      toast.error("Failed to save rating");
     },
   });
 }

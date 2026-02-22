@@ -6,6 +6,7 @@ import { useProfile, usePartner } from "@/hooks/use-profile";
 import { useProperties } from "@/hooks/use-properties";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 
 interface TaskFormProps {
   onDone: () => void;
@@ -52,47 +53,25 @@ export function TaskForm({ onDone }: TaskFormProps) {
         onChange={(e) => setDueDate(e.target.value)}
       />
 
-      <div>
-        <label className="block text-sm font-medium text-navy-400 mb-1">
-          Assign To
-        </label>
-        <select
-          value={assignedTo}
-          onChange={(e) => setAssignedTo(e.target.value)}
-          className="w-full rounded-lg border border-navy-700 bg-navy-900 px-3 py-2.5 text-sm text-navy-300 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-        >
-          <option value="">Unassigned</option>
-          {profile && (
-            <option value={profile.id}>
-              {profile.display_name || "Me"}
-            </option>
-          )}
-          {partner && (
-            <option value={partner.id}>
-              {partner.display_name || "Partner"}
-            </option>
-          )}
-        </select>
-      </div>
+      <Select
+        label="Assign To"
+        value={assignedTo}
+        onChange={(e) => setAssignedTo(e.target.value)}
+        placeholder="Unassigned"
+        options={[
+          ...(profile ? [{ value: profile.id, label: profile.display_name || "Me" }] : []),
+          ...(partner ? [{ value: partner.id, label: partner.display_name || "Partner" }] : []),
+        ]}
+      />
 
       {properties && properties.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-navy-400 mb-1">
-            Link to Property
-          </label>
-          <select
-            value={propertyId}
-            onChange={(e) => setPropertyId(e.target.value)}
-            className="w-full rounded-lg border border-navy-700 bg-navy-900 px-3 py-2.5 text-sm text-navy-300 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          >
-            <option value="">None</option>
-            {properties.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.address}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Link to Property"
+          value={propertyId}
+          onChange={(e) => setPropertyId(e.target.value)}
+          placeholder="None"
+          options={properties.map((p) => ({ value: p.id, label: p.address }))}
+        />
       )}
 
       <Button type="submit" fullWidth disabled={createTask.isPending}>

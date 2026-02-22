@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/supabase-provider";
+import { toast } from "sonner";
 import type { FamilySettings } from "@/lib/supabase/types";
 
 export function useFamilySettings() {
@@ -62,6 +63,10 @@ export function useUpdateFamilySettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-settings"] });
+      toast.success("Settings saved");
+    },
+    onError: () => {
+      toast.error("Failed to save settings");
     },
   });
 }

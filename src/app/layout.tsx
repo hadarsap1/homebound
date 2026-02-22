@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SupabaseProvider } from "@/components/providers/supabase-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,6 +51,17 @@ export default function RootLayout({
         <SupabaseProvider>
           <QueryProvider>{children}</QueryProvider>
         </SupabaseProvider>
+        <Toaster
+          theme="dark"
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: "#1e293b",
+              border: "1px solid #334155",
+              color: "#cbd5e1",
+            },
+          }}
+        />
       </body>
     </html>
   );

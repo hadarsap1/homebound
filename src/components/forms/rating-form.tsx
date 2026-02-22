@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useFamilySettings } from "@/hooks/use-family-settings";
 import { StarRating } from "@/components/ui/star-rating";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { DynamicFieldInput } from "./dynamic-field-input";
 import type { Json, CustomFieldDefinition } from "@/lib/supabase/types";
 
@@ -67,16 +68,13 @@ export function RatingForm({ propertyId, onDone }: RatingFormProps) {
         />
       ))}
 
-      <div>
-        <label className="block text-sm font-medium text-navy-400 mb-1">Notes</label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-          className="block w-full rounded-lg border border-navy-700 bg-navy-900 px-4 py-3 text-navy-300 placeholder-navy-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          placeholder="Your thoughts..."
-        />
-      </div>
+      <Textarea
+        label="Notes"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={3}
+        placeholder="Your thoughts..."
+      />
 
       <Button type="submit" fullWidth disabled={upsertRating.isPending}>
         {upsertRating.isPending ? "Saving..." : "Save Rating"}

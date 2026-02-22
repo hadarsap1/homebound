@@ -51,9 +51,10 @@ export function BottomSheet({ open, onClose, title, children, fullHeight }: Bott
                   )}
                   <button
                     onClick={onClose}
-                    className="ml-auto rounded-lg p-2 text-navy-500 hover:text-navy-300 mt-2"
+                    aria-label="Close"
+                    className="ml-auto rounded-lg p-3 text-navy-500 hover:text-navy-300 mt-2"
                   >
-                    <X size={20} />
+                    <X size={20} aria-hidden="true" />
                   </button>
                 </div>
                 <div className="overflow-y-auto p-4" style={{ maxHeight: "calc(85vh - 60px)" }}>

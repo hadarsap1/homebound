@@ -1,20 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile, usePartner } from "@/hooks/use-profile";
 import { useProperties } from "@/hooks/use-properties";
 import { useTasks } from "@/hooks/use-tasks";
+import { useFamilyRatings } from "@/hooks/use-ratings";
 import { Card } from "@/components/ui/card";
 import { PropertyCard } from "@/components/property/property-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/loading-skeleton";
-import { Home, Eye, Heart, FileText, CheckSquare, Plus } from "lucide-react";
+import { Home, Eye, Heart, FileText, CheckSquare, Plus, AlertTriangle, Sparkles, Users } from "lucide-react";
+
+const RATING_CATEGORIES = ["overall", "location", "condition", "value"] as const;
 
 export default function DashboardPage() {
   const router = useRouter();
   const { data: profile } = useProfile();
+  const { data: partner } = usePartner();
   const { data: properties, isLoading: propsLoading } = useProperties();
   const { data: tasks } = useTasks();
+  const { data: allRatings } = useFamilyRatings();
 
   const statusCounts = {
     new: properties?.filter((p) => p.status === "new").length || 0,
@@ -26,13 +31,55 @@ export default function DashboardPage() {
   const pendingTasks = tasks?.filter((t) => !t.completed) || [];
   const recentProperties = properties?.slice(0, 5) || [];
 
+  // Properties added in the last 48 hours
+  const newProperties = (properties || []).filter((p) =>
+    p.created_at && Date.now() - new Date(p.created_at).getTime() < 48 * 60 * 60 * 1000
+  );
+
+  // Disagreement highlights: properties where both partners rated and gap >= 2
+  const disagreements: { propertyId: string; address: string; category: string; gap: number }[] = [];
+  if (profile && partner && allRatings) {
+    const byProperty = new Map<string, typeof allRatings>();
+    for (const r of allRatings) {
+      const list = byProperty.get(r.property_id) || [];
+      list.push(r);
+      byProperty.set(r.property_id, list);
+    }
+    for (const [propertyId, ratings] of byProperty) {
+      const mine = ratings.find((r) => r.profile_id === profile.id);
+      const theirs = ratings.find((r) => r.profile_id === partner.id);
+      if (!mine || !theirs) continue;
+      for (const cat of RATING_CATEGORIES) {
+        const a = mine[cat] as number;
+        const b = theirs[cat] as number;
+        if (a && b && Math.abs(a - b) >= 2) {
+          const prop = properties?.find((p) => p.id === propertyId);
+          disagreements.push({
+            propertyId,
+            address: prop?.address || "Unknown",
+            category: cat,
+            gap: Math.abs(a - b),
+          });
+          break; // one disagreement per property is enough
+        }
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-navy-300">
           Hey {profile?.display_name || "there"} 👋
         </h1>
-        <p className="text-sm text-navy-500 mt-1">Your home search at a glance</p>
+        {partner ? (
+          <p className="text-sm text-navy-500 mt-1">
+            <Users size={12} className="inline mr-1" />
+            Searching with {partner.display_name}
+          </p>
+        ) : (
+          <p className="text-sm text-navy-500 mt-1">Your home search at a glance</p>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -74,6 +121,55 @@ export default function DashboardPage() {
           <FileText size={16} className="mr-1" /> Tasks
         </Button>
       </div>
+
+      {/* What's New */}
+      {newProperties.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={16} className="text-emerald-400" />
+            <h2 className="text-lg font-semibold text-navy-300">What&apos;s New</h2>
+          </div>
+          <Card>
+            <p className="text-sm text-navy-400">
+              {newProperties.length} {newProperties.length === 1 ? "property" : "properties"} added in the last 48 hours
+            </p>
+            <div className="mt-2 space-y-1">
+              {newProperties.slice(0, 3).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/properties/${p.id}`)}
+                  className="block w-full text-left text-sm text-cyan-400 hover:text-cyan-300 truncate"
+                >
+                  {p.address}
+                </button>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Disagreements */}
+      {disagreements.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle size={16} className="text-amber-400" />
+            <h2 className="text-lg font-semibold text-navy-300">Worth Discussing</h2>
+          </div>
+          <div className="space-y-2">
+            {disagreements.slice(0, 3).map((d) => (
+              <Card
+                key={d.propertyId}
+                onClick={() => router.push(`/properties/${d.propertyId}`)}
+              >
+                <p className="text-sm text-navy-300 truncate">{d.address}</p>
+                <p className="text-xs text-navy-500 mt-0.5">
+                  {d.gap}-star gap on {d.category}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Properties */}
       {recentProperties.length > 0 && (

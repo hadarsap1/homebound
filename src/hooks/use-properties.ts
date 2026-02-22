@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/supabase-provider";
+import { toast } from "sonner";
 import type { Property, PropertyInsert, PropertyUpdate, PropertyStatus } from "@/lib/supabase/types";
 
 export function useProperties(status?: PropertyStatus) {
@@ -73,6 +74,10 @@ export function useCreateProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      toast.success("Property saved");
+    },
+    onError: () => {
+      toast.error("Failed to save property");
     },
   });
 }
@@ -96,6 +101,10 @@ export function useUpdateProperty() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
       queryClient.invalidateQueries({ queryKey: ["property", data.id] });
+      toast.success("Property updated");
+    },
+    onError: () => {
+      toast.error("Failed to update property");
     },
   });
 }
@@ -115,6 +124,10 @@ export function useDeleteProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      toast.success("Property deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete property");
     },
   });
 }

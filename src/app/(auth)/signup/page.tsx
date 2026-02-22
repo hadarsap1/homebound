@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSupabase } from "@/components/providers/supabase-provider";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Step = "credentials" | "family";
 
@@ -14,7 +17,6 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Family step state
@@ -24,7 +26,6 @@ export default function SignupPage() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     const { error } = await supabase.auth.signUp({
@@ -36,7 +37,7 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setError(error.message);
+      toast.error(error.message);
       setLoading(false);
       return;
     }
@@ -47,7 +48,6 @@ export default function SignupPage() {
 
   async function handleCreateFamily(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     const { data: family, error: familyError } = await supabase
@@ -57,7 +57,7 @@ export default function SignupPage() {
       .single();
 
     if (familyError) {
-      setError(familyError.message);
+      toast.error(familyError.message);
       setLoading(false);
       return;
     }
@@ -76,7 +76,6 @@ export default function SignupPage() {
 
   async function handleJoinFamily(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     const { data: family, error: familyError } = await supabase
@@ -86,7 +85,7 @@ export default function SignupPage() {
       .single();
 
     if (familyError || !family) {
-      setError("Invalid invite code. Please check and try again.");
+      toast.error("Invalid invite code. Please check and try again.");
       setLoading(false);
       return;
     }
@@ -111,12 +110,6 @@ export default function SignupPage() {
             <h1 className="text-3xl font-bold text-amber-500">HomeBound</h1>
             <p className="mt-2 text-navy-500">Set up your family workspace</p>
           </div>
-
-          {error && (
-            <div className="rounded-lg bg-rose-500/10 p-3 text-sm text-rose-400">
-              {error}
-            </div>
-          )}
 
           {!familyMode && (
             <div className="space-y-3">
@@ -143,27 +136,17 @@ export default function SignupPage() {
 
           {familyMode === "create" && (
             <form onSubmit={handleCreateFamily} className="space-y-4">
-              <div>
-                <label htmlFor="familyName" className="block text-sm font-medium text-navy-400">
-                  Family Name
-                </label>
-                <input
-                  id="familyName"
-                  type="text"
-                  value={familyName}
-                  onChange={(e) => setFamilyName(e.target.value)}
-                  required
-                  className="mt-1 block w-full rounded-lg border border-navy-700 bg-navy-900 px-4 py-3 text-navy-300 placeholder-navy-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  placeholder="e.g. The Sapirs"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-amber-500 px-4 py-3 font-semibold text-navy-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-              >
+              <Input
+                label="Family Name"
+                id="familyName"
+                value={familyName}
+                onChange={(e) => setFamilyName(e.target.value)}
+                required
+                placeholder="e.g. The Sapirs"
+              />
+              <Button type="submit" disabled={loading} fullWidth>
                 {loading ? "Creating..." : "Create Family"}
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={() => setFamilyMode(null)}
@@ -176,28 +159,19 @@ export default function SignupPage() {
 
           {familyMode === "join" && (
             <form onSubmit={handleJoinFamily} className="space-y-4">
-              <div>
-                <label htmlFor="inviteCode" className="block text-sm font-medium text-navy-400">
-                  Invite Code
-                </label>
-                <input
-                  id="inviteCode"
-                  type="text"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  required
-                  maxLength={8}
-                  className="mt-1 block w-full rounded-lg border border-navy-700 bg-navy-900 px-4 py-3 text-center text-xl font-mono tracking-widest text-navy-300 uppercase placeholder-navy-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  placeholder="ABCD1234"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-amber-500 px-4 py-3 font-semibold text-navy-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-              >
+              <Input
+                label="Invite Code"
+                id="inviteCode"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                required
+                maxLength={8}
+                className="text-center text-xl font-mono tracking-widest uppercase"
+                placeholder="ABCD1234"
+              />
+              <Button type="submit" disabled={loading} fullWidth>
                 {loading ? "Joining..." : "Join Family"}
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={() => setFamilyMode(null)}
@@ -221,65 +195,39 @@ export default function SignupPage() {
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
-          {error && (
-            <div className="rounded-lg bg-rose-500/10 p-3 text-sm text-rose-400">
-              {error}
-            </div>
-          )}
+          <Input
+            label="Your Name"
+            id="displayName"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            required
+            placeholder="Your name"
+          />
 
-          <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-navy-400">
-              Your Name
-            </label>
-            <input
-              id="displayName"
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              required
-              className="mt-1 block w-full rounded-lg border border-navy-700 bg-navy-900 px-4 py-3 text-navy-300 placeholder-navy-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="Your name"
-            />
-          </div>
+          <Input
+            label="Email"
+            id="signupEmail"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="you@email.com"
+          />
 
-          <div>
-            <label htmlFor="signupEmail" className="block text-sm font-medium text-navy-400">
-              Email
-            </label>
-            <input
-              id="signupEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 block w-full rounded-lg border border-navy-700 bg-navy-900 px-4 py-3 text-navy-300 placeholder-navy-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="you@email.com"
-            />
-          </div>
+          <Input
+            label="Password"
+            id="signupPassword"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            placeholder="Min 6 characters"
+          />
 
-          <div>
-            <label htmlFor="signupPassword" className="block text-sm font-medium text-navy-400">
-              Password
-            </label>
-            <input
-              id="signupPassword"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="mt-1 block w-full rounded-lg border border-navy-700 bg-navy-900 px-4 py-3 text-navy-300 placeholder-navy-600 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="Min 6 characters"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-amber-500 px-4 py-3 font-semibold text-navy-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={loading} fullWidth>
             {loading ? "Creating account..." : "Create Account"}
-          </button>
+          </Button>
         </form>
 
         <p className="text-center text-sm text-navy-500">

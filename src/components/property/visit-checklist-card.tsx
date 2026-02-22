@@ -68,7 +68,7 @@ export function VisitChecklistCard({ checklist }: VisitChecklistCardProps) {
                 type="checkbox"
                 checked={item.checked}
                 onChange={() => toggleItem(i)}
-                className="mt-0.5 h-4 w-4 rounded border-navy-700 bg-navy-900 text-amber-500 focus:ring-amber-500"
+                className="mt-0.5 h-5 w-5 rounded border-navy-700 bg-navy-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-0 focus:ring-1 cursor-pointer"
               />
               <span className={`text-sm ${item.checked ? "text-navy-600 line-through" : "text-navy-300"}`}>
                 {item.label}

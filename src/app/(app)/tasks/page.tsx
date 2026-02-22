@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { TaskForm } from "@/components/forms/task-form";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { Skeleton } from "@/components/ui/loading-skeleton";
 import { Plus, CheckSquare, Trash2, User } from "lucide-react";
 import { format } from "date-fns";
@@ -22,6 +24,13 @@ export default function TasksPage() {
   const deleteTask = useDeleteTask();
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+
+  const filterOptions = [
+    { value: "all", label: "All" },
+    { value: "mine", label: "Mine" },
+    { value: "partner", label: partner?.display_name || "Partner" },
+  ];
 
   const filtered = (tasks || []).filter((t) => {
     if (filter === "mine") return t.assigned_to === profile?.id;
@@ -50,21 +59,11 @@ export default function TasksPage() {
         </Button>
       </div>
 
-      <div className="flex gap-2">
-        {(["all", "mine", "partner"] as Filter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              filter === f
-                ? "bg-amber-500 text-navy-950"
-                : "bg-navy-800 text-navy-400 hover:bg-navy-700"
-            }`}
-          >
-            {f === "all" ? "All" : f === "mine" ? "Mine" : partner?.display_name || "Partner"}
-          </button>
-        ))}
-      </div>
+      <FilterChips
+        options={filterOptions}
+        value={filter}
+        onChange={(v) => setFilter(v as Filter)}
+      />
 
       {open.length === 0 && completed.length === 0 ? (
         <EmptyState
@@ -86,6 +85,7 @@ export default function TasksPage() {
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => toggleTask.mutate({ id: task.id, completed: true })}
+                      aria-label={`Complete task: ${task.title}`}
                       className="mt-0.5 h-5 w-5 shrink-0 rounded border border-navy-600 hover:border-amber-500 transition-colors"
                     />
                     <div className="flex-1 min-w-0">
@@ -107,10 +107,11 @@ export default function TasksPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => deleteTask.mutate(task.id)}
+                      onClick={() => setDeleteTaskId(task.id)}
+                      aria-label={`Delete task: ${task.title}`}
                       className="text-navy-700 hover:text-rose-400 transition-colors"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={14} aria-hidden="true" />
                     </button>
                   </div>
                 </Card>
@@ -128,18 +129,20 @@ export default function TasksPage() {
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => toggleTask.mutate({ id: task.id, completed: false })}
+                      aria-label={`Mark "${task.title}" as incomplete`}
                       className="mt-0.5 h-5 w-5 shrink-0 rounded bg-amber-500 flex items-center justify-center"
                     >
-                      <CheckSquare size={12} className="text-navy-950" />
+                      <CheckSquare size={12} className="text-navy-950" aria-hidden="true" />
                     </button>
                     <p className="flex-1 text-sm text-navy-500 line-through">
                       {task.title}
                     </p>
                     <button
-                      onClick={() => deleteTask.mutate(task.id)}
+                      onClick={() => setDeleteTaskId(task.id)}
+                      aria-label={`Delete task: ${task.title}`}
                       className="text-navy-700 hover:text-rose-400 transition-colors"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={14} aria-hidden="true" />
                     </button>
                   </div>
                 </Card>
@@ -152,6 +155,19 @@ export default function TasksPage() {
       <BottomSheet open={showForm} onClose={() => setShowForm(false)} title="New Task">
         <TaskForm onDone={() => setShowForm(false)} />
       </BottomSheet>
+
+      <ConfirmModal
+        open={!!deleteTaskId}
+        onClose={() => setDeleteTaskId(null)}
+        title="Delete Task"
+        message="Delete this task? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteTaskId) deleteTask.mutate(deleteTaskId);
+          setDeleteTaskId(null);
+        }}
+      />
     </div>
   );
 }

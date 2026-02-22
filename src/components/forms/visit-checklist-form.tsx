@@ -69,9 +69,10 @@ export function VisitChecklistForm({ propertyId, onDone }: VisitChecklistFormPro
               <button
                 type="button"
                 onClick={() => removeItem(i)}
+                aria-label={`Remove item: ${item.label}`}
                 className="text-navy-600 hover:text-rose-400"
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
             </div>
           ))}
@@ -89,8 +90,8 @@ export function VisitChecklistForm({ propertyId, onDone }: VisitChecklistFormPro
               }
             }}
           />
-          <Button type="button" variant="secondary" onClick={addItem}>
-            <Plus size={16} />
+          <Button type="button" variant="secondary" onClick={addItem} aria-label="Add checklist item">
+            <Plus size={16} aria-hidden="true" />
           </Button>
         </div>
       </div>

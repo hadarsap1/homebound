@@ -11,8 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { CustomFieldCreator } from "@/components/forms/custom-field-creator";
-import { LogOut, Copy, Plus, X, Check, Settings2, Users, Tag, Columns3 } from "lucide-react";
+import { LogOut, Copy, Share2, Plus, X, Settings2, Users, Tag, Columns3 } from "lucide-react";
+import { toast } from "sonner";
 import type { CustomFieldDefinition } from "@/lib/supabase/types";
 
 export default function SettingsPage() {
@@ -37,20 +39,31 @@ export default function SettingsPage() {
     enabled: !!profile?.family_id,
   });
 
-  const [copied, setCopied] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [showFieldCreator, setShowFieldCreator] = useState(false);
+  const [removeTagIndex, setRemoveTagIndex] = useState<number | null>(null);
+  const [removeFieldIndex, setRemoveFieldIndex] = useState<number | null>(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+    toast.success("Signed out");
     router.push("/login");
   }
 
-  function copyInviteCode() {
+  async function shareInviteCode() {
     if (!family?.invite_code) return;
+    const text = `Join my family on HomeBound! Use invite code: ${family.invite_code}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "HomeBound Invite", text });
+        return;
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
     navigator.clipboard.writeText(family.invite_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    toast.success("Copied!");
   }
 
   async function addTag() {
@@ -116,14 +129,26 @@ export default function SettingsPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-navy-400">Invite Code</span>
+              <span className="font-mono text-sm text-navy-300">
+                {family?.invite_code || "—"}
+              </span>
+            </div>
+            <div className="flex gap-2 mt-2">
               <button
-                onClick={copyInviteCode}
-                className="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-400"
+                onClick={shareInviteCode}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-navy-950 hover:bg-amber-400"
               >
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                <span className="font-mono">
-                  {family?.invite_code || "—"}
-                </span>
+                <Share2 size={14} /> Share
+              </button>
+              <button
+                onClick={() => {
+                  if (!family?.invite_code) return;
+                  navigator.clipboard.writeText(family.invite_code);
+                  toast.success("Copied!");
+                }}
+                className="flex items-center gap-1.5 rounded-lg bg-navy-700 px-3 py-2 text-sm text-navy-300 hover:bg-navy-600"
+              >
+                <Copy size={14} /> Copy
               </button>
             </div>
           </div>
@@ -142,10 +167,11 @@ export default function SettingsPage() {
               <Badge key={i} variant="tag">
                 {tag}
                 <button
-                  onClick={() => removeTag(i)}
+                  onClick={() => setRemoveTagIndex(i)}
+                  aria-label={`Remove tag: ${tag}`}
                   className="ml-1 hover:text-rose-400"
                 >
-                  <X size={12} />
+                  <X size={12} aria-hidden="true" />
                 </button>
               </Badge>
             ))}
@@ -162,8 +188,8 @@ export default function SettingsPage() {
                 }
               }}
             />
-            <Button variant="secondary" onClick={addTag}>
-              <Plus size={16} />
+            <Button variant="secondary" onClick={addTag} aria-label="Add tag">
+              <Plus size={16} aria-hidden="true" />
             </Button>
           </div>
         </Card>
@@ -189,10 +215,11 @@ export default function SettingsPage() {
                       <span className="ml-2 text-xs text-navy-600">{field.type}</span>
                     </div>
                     <button
-                      onClick={() => removeField(i)}
+                      onClick={() => setRemoveFieldIndex(i)}
+                      aria-label={`Remove field: ${field.label}`}
                       className="text-navy-600 hover:text-rose-400"
                     >
-                      <X size={14} />
+                      <X size={14} aria-hidden="true" />
                     </button>
                   </div>
                 )
@@ -214,7 +241,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Sign Out */}
-      <Button variant="danger" fullWidth onClick={handleSignOut}>
+      <Button variant="danger" fullWidth onClick={() => setShowSignOutConfirm(true)}>
         <LogOut size={16} className="mr-1" /> Sign Out
       </Button>
 
@@ -225,6 +252,40 @@ export default function SettingsPage() {
       >
         <CustomFieldCreator onAdd={addField} />
       </BottomSheet>
+
+      <ConfirmModal
+        open={removeTagIndex !== null}
+        onClose={() => setRemoveTagIndex(null)}
+        title="Remove Tag"
+        message="Remove this vibe tag?"
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (removeTagIndex !== null) removeTag(removeTagIndex);
+          setRemoveTagIndex(null);
+        }}
+      />
+
+      <ConfirmModal
+        open={removeFieldIndex !== null}
+        onClose={() => setRemoveFieldIndex(null)}
+        title="Remove Custom Field"
+        message="Remove this custom field? Data on existing properties will not be deleted."
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={() => {
+          if (removeFieldIndex !== null) removeField(removeFieldIndex);
+          setRemoveFieldIndex(null);
+        }}
+      />
+
+      <ConfirmModal
+        open={showSignOutConfirm}
+        onClose={() => setShowSignOutConfirm(false)}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmLabel="Sign Out"
+        onConfirm={handleSignOut}
+      />
     </div>
   );
 }

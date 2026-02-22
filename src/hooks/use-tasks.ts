@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/supabase-provider";
+import { toast } from "sonner";
 import type { Task } from "@/lib/supabase/types";
 
 export function useTasks() {
@@ -51,6 +52,10 @@ export function useCreateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Task created");
+    },
+    onError: () => {
+      toast.error("Failed to create task");
     },
   });
 }
@@ -71,8 +76,12 @@ export function useToggleTask() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success(data.completed ? "Task completed" : "Task reopened");
+    },
+    onError: () => {
+      toast.error("Failed to update task");
     },
   });
 }
@@ -88,6 +97,10 @@ export function useDeleteTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Task deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete task");
     },
   });
 }

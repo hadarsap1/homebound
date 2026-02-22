@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/components/providers/supabase-provider";
+import { toast } from "sonner";
 import type { VisitChecklist } from "@/lib/supabase/types";
 
 export function useVisitChecklists(propertyId: string) {
@@ -57,6 +58,10 @@ export function useCreateVisitChecklist() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["checklists", data.property_id] });
+      toast.success("Visit created");
+    },
+    onError: () => {
+      toast.error("Failed to create visit");
     },
   });
 }
@@ -79,6 +84,10 @@ export function useUpdateVisitChecklist() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["checklists", data.property_id] });
+      toast.success("Checklist saved");
+    },
+    onError: () => {
+      toast.error("Failed to save checklist");
     },
   });
 }
